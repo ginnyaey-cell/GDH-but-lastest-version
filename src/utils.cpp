@@ -126,7 +126,7 @@ void utilsH::UncompleteLevel() {
         level->m_bestTime = 0;
         level->m_bestPoints = 0;
         level->m_isCompletionLegitimate = true;
-        level->m_k111 = 0;
+        // m_k111 renamed in 2.208 bindings - field removed, skip this reset
 
         for (auto i = 0; i < level->m_coins; i++) {
             auto key = level->getCoinKey(i + 1);

@@ -793,18 +793,18 @@ class $modify(MyPlayLayer, PlayLayer) {
         
 
         if (!config.get<bool>("pulse_size", false) && config.get<bool>("no_pulse", false)) {
-            m_audioEffectsLayer->m_notAudioScale = 0.5f;
+            // m_notAudioScale removed in GD 2.208 - only control via FMODAudioEngine
             FMODAudioEngine::get()->m_pulse1 = 0.5f;
         }            
 
         if (config.get<bool>("pulse_size", false)) {
             float value = config.get<float>("pulse_size_value", 0.5f);
             if (config.get<bool>("pulse_multiply", false)) {
-                m_audioEffectsLayer->m_notAudioScale *= value;
+                // m_notAudioScale removed in GD 2.208
                 FMODAudioEngine::get()->m_pulse1 *= value;
             }                
             else {
-                m_audioEffectsLayer->m_notAudioScale = value;
+                // m_notAudioScale removed in GD 2.208
                 FMODAudioEngine::get()->m_pulse1 = value;
             }
         }
@@ -1059,6 +1059,11 @@ class $modify(MyGJBaseGameLayer, GJBaseGameLayer) {
         if (!engine.engine_v2)
             engine.handle_update(this);
 
+        // processCommands signature changed in 2.208 - moved here from processCommands hook
+        NoclipAccuracy::get().handle_update(this, dt);
+        if (engine.engine_v2)
+            engine.handle_update(this);
+
         hooksH::color_dt += dt * config.get<float>("rgb_icons::speed", 0.20f);
         if (config.get<bool>("rgb_icons", false)) {
             auto& rgb_colors = RGBIcons::get();
@@ -1202,15 +1207,10 @@ class $modify(MyGJBaseGameLayer, GJBaseGameLayer) {
         gm->m_performanceMode = performanceMode;
     }
 
-    void processCommands(float dt) {
+    void processCommands(float dt, bool isHalfTick, bool isLastTick) {
         auto& config = Config::get();
-        auto& engine = ReplayEngine::get();
         
-        GJBaseGameLayer::processCommands(dt);
-        NoclipAccuracy::get().handle_update(this, dt);
-        
-        if (engine.engine_v2)
-            engine.handle_update(this);
+        GJBaseGameLayer::processCommands(dt, isHalfTick, isLastTick);
 
         if (config.get<bool>("show_hitboxes", false) && config.get<bool>("show_hitboxes::draw_trail", false)) {
             if (!m_player1->m_isDead) {

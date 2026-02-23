@@ -10,7 +10,7 @@ using namespace geode::prelude;
 
 ReplaySelectLayer* ReplaySelectLayer::create(geode::TextInput* textInput) {
     auto ret = new ReplaySelectLayer();
-    if (ret->initAnchored(200.f, 240.f, "GJ_square01.png")) {
+    if (ret->init(textInput)) {
         ret->autorelease();
         ret->input = textInput;
         return ret;
@@ -20,7 +20,8 @@ ReplaySelectLayer* ReplaySelectLayer::create(geode::TextInput* textInput) {
     return nullptr;
 }
 
-bool ReplaySelectLayer::setup() {
+bool ReplaySelectLayer::init(geode::TextInput* textInput) {
+    if (!Popup::init(200.f, 240.f, "GJ_square01.png")) return false;
     auto& engine = ReplayEngine::get();
 
     this->setTitle("Select Replay");
@@ -164,7 +165,8 @@ CCLabelBMFont* AddTextToToggle(const char *str, CCMenuItemToggler* toggler, floa
     return label;
 }
 
-bool HacksLayer::setup() {
+bool HacksLayer::init() {
+    if (!Popup::init(460.f, 260.f, "GJ_square01.png")) return false;
     auto& config = Config::get();
     auto& hacks = Hacks::get();
 
@@ -425,7 +427,7 @@ void HacksLayer::switchTab(int newIndex) {
 
 HacksLayer* HacksLayer::create() {
     auto ret = new HacksLayer();
-    if (ret->initAnchored(460.f, 260.f, "GJ_square01.png")) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
@@ -438,12 +440,12 @@ void HacksLayer::onExit() {
     Config::get().save(fileDataPath);
     Labels::get().save();
     RGBIcons::get().save();
-    geode::Popup<>::onExit();
+    geode::Popup::onExit();
 }
 
 RecorderLayer* RecorderLayer::create() {
     auto ret = new RecorderLayer();
-    if (ret->initAnchored(360.f, 240.f, "GJ_square01.png")) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
@@ -452,7 +454,8 @@ RecorderLayer* RecorderLayer::create() {
     return nullptr;
 }
 
-bool RecorderLayer::setup() {
+bool RecorderLayer::init() {
+    if (!Popup::init(360.f, 240.f, "GJ_square01.png")) return false;
     auto& recorder = Recorder::get();
     this->setTitle("Recorder");
 
@@ -496,26 +499,17 @@ bool RecorderLayer::setup() {
             bool check2 = recorder.fps >= 60 && recorder.fps <= 240;        
             if (engine.engine_v2 ? (!fps_enabled && check2) : (fps_enabled && check)) {
                 if (recorder.enabled) {
-                    geode::utils::file::pick(geode::utils::file::PickMode::OpenFolder, {std::nullopt, {}}).listen(
-                            [&](geode::Result<std::filesystem::path>* path) {
-                        if (!path->isErr()) {
-                            auto path_final = path->unwrap();
-
-                            recorder.folderShowcasesPath = path_final;
-                            
-                            recorder.video_name = fmt::format("{}.{}", recorder.video_name2, recorder.flvc_enabled ? "flvc" : "mp4");
-
-                            if (!recorder.is_recording) {
-                                recorder.start("");
-                                FLAlertLayer::create("Recorder", fmt::format("Recording started!\nFilename: {}\nPath {}\nSize: {}x{}\nFPS: {}",
-                                                recorder.video_name, recorder.folderShowcasesPath, recorder.width, recorder.height, recorder.fps), "OK")->show();
-                            }                   
+                    // On mobile, use the writable path as default (no native folder picker)
+                    {
+                        auto defaultPath = std::filesystem::path(cocos2d::CCFileUtils::get()->getWritablePath2().c_str());
+                        recorder.folderShowcasesPath = defaultPath;
+                        recorder.video_name = fmt::format("{}.{}", recorder.video_name2, recorder.flvc_enabled ? "flvc" : "mp4");
+                        if (!recorder.is_recording) {
+                            recorder.start("");
+                            FLAlertLayer::create("Recorder", fmt::format("Recording started!\nFilename: {}\nPath {}\nSize: {}x{}\nFPS: {}",
+                                recorder.video_name, recorder.folderShowcasesPath, recorder.width, recorder.height, recorder.fps), "OK")->show();
                         }
-                        else {
-                            FLAlertLayer::create("Recorder", "Not selected directory", "OK")->show();
-                            sender->toggle(false);
-                        }
-                    });
+                    }
                 }                        
                 else {
                     recorder.stop();
@@ -624,7 +618,7 @@ bool RecorderLayer::setup() {
 
 RecorderAudioLayer* RecorderAudioLayer::create() {
     auto ret = new RecorderAudioLayer();
-    if (ret->initAnchored(360.f, 240.f, "GJ_square01.png")) {
+    if (ret->init()) {
         ret->autorelease();
         return ret;
     }
@@ -633,7 +627,8 @@ RecorderAudioLayer* RecorderAudioLayer::create() {
     return nullptr;
 }
 
-bool RecorderAudioLayer::setup() {
+bool RecorderAudioLayer::init() {
+    if (!Popup::init(360.f, 240.f, "GJ_square01.png")) return false;
     auto& recorder = Recorder::get();
     auto& recorderAudio = RecorderAudio::get();
     this->setTitle("Recorder (Audio)");
@@ -664,28 +659,20 @@ bool RecorderAudioLayer::setup() {
         recorderAudio.enabled = !sender->isOn();
 
         if (recorderAudio.enabled) {
-            geode::utils::file::pick(geode::utils::file::PickMode::OpenFolder, {std::nullopt, {}}).listen(
-                    [&](geode::Result<std::filesystem::path>* path) {
-                if (!path->isErr()) {
-                    auto path_final = path->unwrap();
-                    recorder.folderShowcasesPath = path_final;                        
-                    recorderAudio.audio_name = fmt::format("{}.wav", recorderAudio.audio_name2);
-
-                        if (!recorderAudio.showcase_mode) {
-                            recorderAudio.start();
-                        }
-                        else
-                            recorderAudio.first_start = true;
-
-                        FLAlertLayer::create("Recorder (Audio)", 
-                            recorderAudio.showcase_mode ? "Rendering begins when you re-enter the level (don't forget to set up the macro playback!!)" :
-                                                        "Audio recording started!", "OK")->show();             
+            // On mobile, use writable path as default (no native folder picker)
+            {
+                auto defaultPath = std::filesystem::path(cocos2d::CCFileUtils::get()->getWritablePath2().c_str());
+                recorder.folderShowcasesPath = defaultPath;
+                recorderAudio.audio_name = fmt::format("{}.wav", recorderAudio.audio_name2);
+                if (!recorderAudio.showcase_mode) {
+                    recorderAudio.start();
+                } else {
+                    recorderAudio.first_start = true;
                 }
-                else {
-                    FLAlertLayer::create("Recorder (Audio)", "Not selected directory", "OK")->show();
-                    sender->toggle(false);
-                }
-            });
+                FLAlertLayer::create("Recorder (Audio)",
+                    recorderAudio.showcase_mode ? "Rendering begins when you re-enter the level (don't forget to set up the macro playback!!)" :
+                                                "Audio recording started!", "OK")->show();
+            }
         }                        
         else {            
             recorderAudio.stop();

@@ -21,7 +21,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE libs libs/ffmpeg)
 
 set(HAS_IMGUI ON)
 add_subdirectory(libs/imgui)
-CPMAddPackage("gh:matcool/gd-imgui-cocos#8973953")
+CPMAddPackage("gh:matcool/gd-imgui-cocos#9764333")
 
 target_link_libraries(${PROJECT_NAME} imgui-cocos imgui)
 
@@ -38,3 +38,4 @@ if (ANDROID AND ANDROID_ABI STREQUAL "arm64-v8a")
 endif()
 
 setup_geode_mod(${PROJECT_NAME})
+

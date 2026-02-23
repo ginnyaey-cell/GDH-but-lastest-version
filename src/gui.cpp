@@ -1,4 +1,10 @@
 #include "gui.hpp"
+#ifdef GEODE_IS_WINDOWS
+#include <windows.h>
+#include <shlobj.h>
+#include <commdlg.h>
+#endif
+
 #include <imgui/imgui_stdlib.h>
 #include <font.hpp>
 #include "config.hpp"
@@ -544,7 +550,7 @@ void Gui::Render() {
         }
         else if (windowName == "Replay Engine") {
             static geode::Mod* cbfMod = geode::Loader::get()->getLoadedMod("syzzi.click_between_frames");
-            static bool hasCBF = cbfMod != nullptr && cbfMod->isEnabled();
+            static bool hasCBF = cbfMod != nullptr && cbfMod->isLoaded();
 
             if (hasCBF && !cbfMod->getSettingValue<bool>("soft-toggle")) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImColor(255, 128, 128).Value);
@@ -1412,10 +1418,20 @@ void Gui::Render() {
                             ImGui::SameLine();
 
                             if (ImGuiH::Button("Change folder")) {                           
-                                auto result = geode::utils::file::pick(geode::utils::file::PickMode::OpenFolder, {std::nullopt, {}});
-                                if (result.isFinished() && !result.getFinishedValue()->isErr()) {
-                                    recorder.folderShowcasesPath = result.getFinishedValue()->unwrap();
-                                    config.set<std::filesystem::path>("showcases_path", recorder.folderShowcasesPath);
+                                // Use Windows native folder dialog (no coroutines = no MSVC crash)
+                                {
+                                    BROWSEINFOW bi = {};
+                                    bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+                                    bi.lpszTitle = L"Select output folder";
+                                    LPITEMIDLIST pidl = SHBrowseForFolderW(&bi);
+                                    if (pidl) {
+                                        wchar_t buf[MAX_PATH];
+                                        if (SHGetPathFromIDListW(pidl, buf)) {
+                                            recorder.folderShowcasesPath = std::filesystem::path(buf);
+                                            config.set<std::filesystem::path>("showcases_path", recorder.folderShowcasesPath);
+                                        }
+                                        CoTaskMemFree(pidl);
+                                    }
                                 }
                             }
 
@@ -1756,15 +1772,23 @@ void Gui::Render() {
                     .files = { "*.dll"}
                 };
 
-                auto result = geode::utils::file::pick(geode::utils::file::PickMode::OpenFile, {std::nullopt, {filter}});
-                if (result.isFinished() && !result.getFinishedValue()->isErr()) {
-                    std::filesystem::path path = result.getFinishedValue()->unwrap();
-                    HMODULE hModule = LoadLibraryW(path.wstring().c_str());
-                    if (hModule) {
-                        ImGuiH::Popup::get().add_popup("Injected successfully");
-                    }
-                    else {
-                        ImGuiH::Popup::get().add_popup("Failed to inject");
+                // Use Windows native file dialog (no coroutines = no MSVC crash)
+                {
+                    wchar_t buf[MAX_PATH] = {};
+                    OPENFILENAMEW ofn = {};
+                    ofn.lStructSize = sizeof(ofn);
+                    ofn.lpstrFilter = L"DLL Files *.dll All Files *.* ";
+                    ofn.lpstrFile = buf;
+                    ofn.nMaxFile = MAX_PATH;
+                    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+                    if (GetOpenFileNameW(&ofn)) {
+                        std::filesystem::path path(buf);
+                        HMODULE hModule = LoadLibraryW(path.wstring().c_str());
+                        if (hModule) {
+                            ImGuiH::Popup::get().add_popup("Injected successfully");
+                        } else {
+                            ImGuiH::Popup::get().add_popup("Failed to inject");
+                        }
                     }
                 }
                 #endif

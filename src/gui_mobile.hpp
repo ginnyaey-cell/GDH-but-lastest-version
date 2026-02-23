@@ -19,7 +19,7 @@ protected:
     std::map<CCMenuItemToggler*, std::function<void(bool)>> m_togglerCallbacks;
 };
 
-class HacksLayer : public geode::Popup<> {
+class HacksLayer : public geode::Popup {
 private:
     std::vector<CCMenuItemSpriteExtra*> m_buttonTabs;
     std::vector<HacksTab*> m_tabs;
@@ -27,30 +27,35 @@ private:
 
     CCMenuItemToggler* record_toggle;
     CCMenuItemToggler* play_toggle;
+protected:
+    bool init();
 public:
     static HacksLayer* create(); 
 
     void switchTab(int newIndex);
-    bool setup();
+
     void onExit();
 };
 
-class ReplaySelectLayer : public geode::Popup<> {
+class ReplaySelectLayer : public geode::Popup {
 private:
     geode::TextInput* input;
+protected:
+    bool init(geode::TextInput* textInput);
 public:
     static ReplaySelectLayer* create(geode::TextInput* textInput); 
-    bool setup();
 };
 
-class RecorderLayer : public geode::Popup<> {
+class RecorderLayer : public geode::Popup {
+protected:
+    bool init();
 public:
     static RecorderLayer* create(); 
-    bool setup();
 };
 
-class RecorderAudioLayer : public geode::Popup<> {
+class RecorderAudioLayer : public geode::Popup {
+protected:
+    bool init();
 public:
     static RecorderAudioLayer* create(); 
-    bool setup();
 };

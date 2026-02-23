@@ -1,12 +1,12 @@
 #pragma once
 #include <Geode/Geode.hpp>
 
-class popupSystem : public geode::Popup<> {
+class popupSystem : public geode::Popup {
 private:
     float currentY = 160.f;
 public:
     static popupSystem* create(); 
-    bool setup();
+    bool init(float width, float height);
     void onExit();
 
     void AddText(std::string text, float scale = 0.5f, float y_space = 25.f);

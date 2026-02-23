@@ -216,53 +216,35 @@ class $modify(EditLevelLayer) {
 
 
 #ifdef GEODE_IS_WINDOWS
-class $modify(cocos2d::CCEGLView) {
-    static void onModify(auto& self) {
-        (void)self.setHookPriority("cocos2d::CCEGLView::onGLFWKeyCallback", geode::Priority::First);
-    }
+#include <Geode/modify/CCKeyboardDispatcher.hpp>
+#include "keyMapping.hpp"
 
-    void onGLFWKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-        CCEGLView::onGLFWKeyCallback(window, key, scancode, action, mods);
+// onGLFWKeyCallback is inlined in 2.208 - use CCKeyboardDispatcher instead
+// enumKeyCodes on Windows = VK codes, convert to GLFW via KeyMappingUtils
+class $modify(GDHKeyboardHook, cocos2d::CCKeyboardDispatcher) {
+    bool dispatchKeyboardMSG(cocos2d::enumKeyCodes key, bool down, bool repeat, double time) {
+        if (inited && down) {
+            auto& gui = Gui::get();
+            auto& hacks = Hacks::get();
+            auto& io = ImGui::GetIO();
 
-        if (inited) {
-            if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-                auto& gui = Gui::get();
-                auto& hacks = Hacks::get();
-                if (gui.m_keybindMode && gui.m_waitingForBindKey) {
-                    if (key == GLFW_KEY_BACKSPACE)
-                        gui.m_keyToSet = 0;
-                    else
-                        gui.m_keyToSet = key;
-                    gui.m_waitingForBindKey = false;
-                }
-                else if (!gui.m_keybindMode) {
-                    auto& io = ImGui::GetIO();
-                    if (key == gui.m_toggleKey) {
-                        gui.Toggle();
-                    }
-                    
-                    if (!io.WantCaptureKeyboard) {    
-                        hacks.toggleKeybinds(key);
-                    }
-                }
-			}
-        }     
-    }
-};
+            // Convert VK (enumKeyCodes) to GLFW key code
+            int glfwKey = KeyMappingUtils::GetGLFWFromWinAPI((int)key);
 
-class $modify(MouseKeybindingsManagerCCEGLVHook, cocos2d::CCEGLView) {
-    void onGLFWMouseCallBack(GLFWwindow* window, int button, int action, int mods) {
-        CCEGLView::onGLFWMouseCallBack(window, button, action, mods);
-        if (inited) {
-            if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT) {
-                auto& io = ImGui::GetIO();
-                io.AddMouseButtonEvent(1, true);
+            if (gui.m_keybindMode && gui.m_waitingForBindKey && !repeat) {
+                gui.m_keyToSet = glfwKey;
+                gui.m_waitingForBindKey = false;
             }
-            else if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_RIGHT) {
-                auto& io = ImGui::GetIO();
-                io.AddMouseButtonEvent(1, false);
+            else if (!gui.m_keybindMode) {
+                if (glfwKey == gui.m_toggleKey && !repeat) {
+                    gui.Toggle();
+                }
+                if (!io.WantCaptureKeyboard) {
+                    hacks.toggleKeybinds(glfwKey);
+                }
             }
         }
+        return CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, repeat, time);
     }
 };
 #endif

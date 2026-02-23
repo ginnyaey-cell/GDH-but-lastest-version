@@ -1,4 +1,5 @@
 #pragma once
+#include <Geode/Geode.hpp>
 
 #include "config.hpp"
 #include <algorithm>
@@ -72,7 +73,7 @@ class Labels {
         
 };
 
-class LabelsCreateLayer : public geode::Popup<> {
+class LabelsCreateLayer : public geode::Popup {
 private:
     std::vector<CCMenuItemToggler*> m_toggles;
     std::vector<CCMenuItemToggler*> m_labelTypeToggles;
@@ -82,7 +83,7 @@ private:
     geode::ScrollLayer* m_scrollLayer;
 public:
     static LabelsCreateLayer* create(geode::ScrollLayer* scrollLayer); 
-    bool setup();
+    bool init(geode::ScrollLayer* parentScrollLayer, float width, float height);
 };
 
 class NoclipAccuracy {

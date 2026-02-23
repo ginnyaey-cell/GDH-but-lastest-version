@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <sstream>
 #include "labels.hpp"
+#include <Geode/utils/general.hpp>
 #include "popupSystem.hpp"
 #include "replayEngine.hpp"
 #include "hooks.hpp"
@@ -21,7 +22,7 @@ std::string Label::get_text() {
     auto now = std::chrono::system_clock::now();
     auto steady_now = std::chrono::steady_clock::now();
     std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
-    std::tm localTime = fmt::localtime(now_time_t);
+    std::tm localTime = geode::localtime(now_time_t);
 
     int hour12 = localTime.tm_hour;
     std::string period12 = (hour12 < 12) ? "AM" : "PM";
@@ -65,7 +66,7 @@ std::string Label::get_text() {
     result = replace_all(result, "{re_state}", engine.mode == state::disable ? "<co>Disable<co/>" : engine.mode == state::record ? "<cr>Record<cr/>" : "<cg>Play<cg/>");
     
     static geode::Mod* cbfMod = geode::Loader::get()->getLoadedMod("syzzi.click_between_frames");
-    static bool hasCBF = cbfMod != nullptr && cbfMod->isEnabled();
+    static bool hasCBF = cbfMod != nullptr && cbfMod->isLoaded();
     result = replace_all(result, "{cbf_enabled}", hasCBF ? "<cg>Enabled<cg/>" : "<cr>Disabled<cr/>");
     result = replace_all(result, "{\\n}", "\n");
 
@@ -437,9 +438,8 @@ void Labels::initMobileContext(geode::ScrollLayer* scrollLayer) {
 
 LabelsCreateLayer* LabelsCreateLayer::create(geode::ScrollLayer* scrollLayer) {
     auto ret = new LabelsCreateLayer();
-    if (ret->initAnchored(360.f, 260.f, "GJ_square01.png")) {
+    if (ret->init(scrollLayer, 360.f, 260.f)) {
         ret->autorelease();
-        ret->m_scrollLayer = scrollLayer;
         return ret;
     }
 
@@ -447,7 +447,9 @@ LabelsCreateLayer* LabelsCreateLayer::create(geode::ScrollLayer* scrollLayer) {
     return nullptr;
 }
 
-bool LabelsCreateLayer::setup() {
+bool LabelsCreateLayer::init(geode::ScrollLayer* parentScrollLayer, float width, float height) {
+    if (!Popup::init(width, height, "GJ_square01.png")) return false;
+    m_scrollLayer = parentScrollLayer;
     std::array<std::string, 6> corners = {"Top Left", "Top Right", "Top", "Bottom Left", "Bottom Right", "Bottom"};
     std::array<std::string, 16> label_types = {"Time (24H)", "Time (12H)", "Session Time", "Cheat Indicator", "FPS Counter", "Level Progress", "Attempt", "CPS Counter", "Level Info", "Noclip Accuracy", "Death Counter", "Testmode", "Replay Engine State", "CBF Status", "Rainbow Text", "Custom Text"};
     

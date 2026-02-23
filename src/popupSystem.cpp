@@ -3,7 +3,8 @@
 
 using namespace geode::prelude;
 
-bool popupSystem::setup() {
+bool popupSystem::init(float width, float height) {
+    if (!Popup::init(width, height, "GJ_square01.png")) return false;
     this->setTitle("More Settings");
 
     return true;
@@ -11,7 +12,7 @@ bool popupSystem::setup() {
 
 popupSystem* popupSystem::create() {
     auto ret = new popupSystem();
-    if (ret->initAnchored(300.f, 200.f, "GJ_square01.png")) {
+    if (ret->init(300.f, 200.f)) {
         ret->autorelease();
         return ret;
     }
@@ -21,7 +22,7 @@ popupSystem* popupSystem::create() {
 }
 
 void popupSystem::onExit() {
-    geode::Popup<>::onExit();
+    geode::Popup::onExit();
 }
 
 void popupSystem::AddText(std::string text, float scale, float y_space) {
