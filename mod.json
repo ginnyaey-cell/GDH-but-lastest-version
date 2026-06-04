@@ -1,16 +1,16 @@
 {
-	"geode": "4.6.3",
+	"geode": "5.7.1",
 	"gd": {
-		"win": "2.2074",
-		"android": "2.2074",
-		"mac": "2.2074",
-		"ios": "2.2074"
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
 	},
-	"id": "tobyadd.gdh",
+	"id": "SpackYe.gdhbackup",
 	"name": "GDH",
-	"version": "v5.0.0-beta.8",
-	"developer": "TobyAdd",
-	"description": "GDH is an open-source Geometry Dash mod menu that aims to improve the game's performance and add new features",
+	"version": "v1.0.0backup",
+	"developer": "SpackYe",
+	"description": "GDH is an open-source Geometry Dash mod menu that aims to improve the game's performance and add new features, also this is version for lastest version",
 	"early-load": true,
 	"resources": {
 		"sprites": [
